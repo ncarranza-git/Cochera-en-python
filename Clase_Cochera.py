@@ -3,14 +3,20 @@ from datetime import datetime
 from Clase_Escribir_txt import Escribir
 from Clase_Escribir_txt import Leer
 from Clase_Escribir_txt import Eliminar
+from Conectar_DB import escribir_db
+from Conectar_DB import eliminar_datos
+from Conectar_DB import mostrar_tabla
+from Cochera_gui import *
+# from Cochera_Main import conexion
 # from Clase_Estacionamiento import Estacionamiento
 
 
 class Cochera:
-    def __init__(self, ubicaciones, precio_x_hora):
+    def __init__(self, ubicaciones, precio_x_hora, conexion):
         self.precio_x_hora = precio_x_hora
         self.cant_ubicaciones = ubicaciones
         self.precio_x_dia = precio_x_hora * 0.8
+        self.conexion = conexion
         self.lugares = { }
         self.ubicaciones = { }
         txt = Leer("Cochera_Registro.txt")
@@ -44,56 +50,78 @@ class Cochera:
         print(self.lugares)
         pass
     
-    def ingresar_vehiculo(self):
+    def ingresar_vehiculo(self, vehiculo, ubicacion):
+        self.conexion 
         # print("Bienvenido al Estacionamiento")
-        dominio = input("Ingrese el dominio del vehiculo: ").upper()
-        tipo_vehiculo = input("Indique el tipo de vehiculo: ").upper()
+        # dominio = input("Ingrese el dominio del vehiculo: ").upper()
+        # tipo_vehiculo = input("Indique el tipo de vehiculo: ").upper()
         # hora_ingreso = int(input("La hora de ingreso es: "))
-        lista = []
+        # lista = []
         hora_ingreso = datetime.now()
-        vehiculo = Vehiculo(dominio, tipo_vehiculo) #Construir un objeto de la clase vehiculo.
+
+        # vehiculo = Vehiculo(dominio, tipo_vehiculo) #Construir un objeto de la clase vehiculo.
         # numero_plazas = int(input("Indique la cantidad de plazas del vehiculo: "))
-        ubicacion = input(f"Igrese la ubicación (1-{self.cant_ubicaciones}): ")
+        # ubicacion = input(f"Igrese la ubicación (1-{self.cant_ubicaciones}): ")
+        # try:
+        #     ubicacion = input(f"Igrese la ubicación (1-{self.cant_ubicaciones}): ")
+        # except ValueError:
+        #     print("Error, debes ingresar un número acorde a los lugares disponibles!!")
+
         # numero_plazas = int(input("Indique la cantidad de plazas del vehiculo: "))
+
+        # Valido por consola el ingreso del vehiculo
         print(f"Se ingresó el vehiculo {vehiculo.dominio}, tipo: {vehiculo.tipo_vehiculo} en la ubicación: {ubicacion} a las {hora_ingreso} hs.")
         if self.lugares[ubicacion] is False: #Si la ubicacion esta libre...
             self.lugares[ubicacion] = {"vehiculo": vehiculo, #Guarda la variable vehiculo en la clave vehiculo
                                         "ingreso": hora_ingreso} #Guarda la variable hora de ingreso en la clave ingreso
-            self.lugares[ubicacion] = {"vehiculo": vehiculo, #Guarda la variable vehiculo en la clave vehiculo
-                                        "ingreso": datetime.now()} #Guarda la variable hora de ingreso en la clave ingreso con datetime
             
+            # Creo los datos para ingresar en el txt
             registro = ",".join([self.lugares[ubicacion]["ingreso"].strftime("%Y-%m-%d-%H-%M"),
             ubicacion,self.lugares[ubicacion]["vehiculo"].dominio, self.lugares[ubicacion]
             ["vehiculo"].tipo_vehiculo]) + "\n"
+            # Escribo el archivo txt
             Escribir("Cochera_Registro.txt", registro)
+            # Escribo en la base de datos
+            escribir_db(self.conexion, "tabla_vehiculos", vehiculo.dominio, vehiculo.tipo_vehiculo, ubicacion, hora_ingreso)
             print(self.lugares)
+            print("Se ingresaron los datos correctamente en la DB")
         else:
             print(f"La ubicacion {ubicacion} está ocupada")
             print("------------")
         # numero_plazas = int(input("Indique la cantidad de plazas del vehiculo: "))
    
-    def retirar_vehiculo(self):
-        print("Indique los datos del vehículo que desea retirar")
-        dominio_buscado = input("Ingrese el dominio del vehículo: ").upper()
+    def retirar_vehiculo(self, dominio_buscado):
+        # print("Indique los datos del vehículo que desea retirar")
+        # dominio_buscado = input("Ingrese el dominio del vehículo: ").upper()
         Eliminar("Cochera_Registro.txt", dominio_buscado)
         for i in range( 1, self.cant_ubicaciones+1):
             if self.lugares[str(i)] != False:
                 if self.lugares[str(i)]["vehiculo"].dominio == dominio_buscado: # Si el dominio buscado coincide con alguno guardado...
+                    eliminar_datos(self.conexion, "tabla_vehiculos", dominio_buscado) #Llamo a la funcion para eliminar los datos de mi DB
                     ingreso = self.lugares[str(i)]["ingreso"] # Busco la variable hora de ingreso en el diccionario y la guardo en otra variable
                     self.calcular_total(ingreso)
                     self.lugares[str(i)] = False
-
+                else:
+                    print("No se encuentra el dominio buscado!")
                     # print(Vehiculo(dominio_buscado))
                 # elif self.lugares[str(i)]["vehiculo"].dominio != dominio_buscado:
                 #     print("No se encontró el dominio buscado ")
     
     def mostrar_vehiculos(self):
+        mostrar_tabla(self.conexion, "tabla_vehiculos")
+        vehiculos_actuales = []
         for i in range(1, self.cant_ubicaciones+1):
             if self.lugares[str(i)] == False:
-                print(f"{str(i)} - LIBRE")
+                 print(f"{str(i)} - LIBRE")
             else:
-                print(f"{str(i)} - Dominio: {self.lugares[str(i)]["vehiculo"].dominio}") # Muestro el dominio que ocupa el lugar
-    pass
+                dominio = {self.lugares[str(i)]["vehiculo"].dominio}
+                tipo = {self.lugares[str(i)]["vehiculo"].tipo_vehiculo}
+                ingreso = self.lugares[str(i)]["ingreso"].strftime("%Y-%m-%d-%H-%M")
+                vehiculos_actuales.append(f"{i} - {dominio} - {tipo} - {ingreso}")
+                #  print(f"{str(i)} - Dominio: {self.lugares[str(i)]["vehiculo"].dominio}") # Muestro el dominio que ocupa el lugar
+                #  vehiculos_actuales.append(f"{i} - Dominio:  {str(i)["vehiculo"].dominio}")
+        return "\n".join(vehiculos_actuales)
+
 
     def calcular_total(self, ingreso):
         hora_salida = datetime.now()

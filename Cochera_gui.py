@@ -1,5 +1,7 @@
 import tkinter 
 from tkinter import *
+from Clase_Vehiculo import Vehiculo
+
 
 
 class CocheraGUI():
@@ -41,14 +43,25 @@ class CocheraGUI():
         self.entry_tipo_vehiculo.grid(row=1,column=1, padx=10, pady=10 )
         self.entry_ubicacion = tkinter.Entry(self.ventana_ingresar)
         self.entry_ubicacion.grid(row=2, column=1, padx=10, pady=10)
+        # self.cochera.ingresar_vehiculo(self.nuevo_vehiculo, self.entry_ubicacion.get())
 
         # Creo los botones para confirmar los datos, y para salir de la ventana
-        self.boton_confirmar_datos = tkinter.Button(self.ventana_ingresar, text="Confirmar")
-        self.boton_confirmar_datos.grid(row=7, column= 1, padx=10, pady=10)
         self.boton_salir_de_ingresar = tkinter.Button(self.ventana_ingresar, text="Salir", command=self.ventana_ingresar.destroy)
-        self.boton_salir_de_ingresar.grid(row=7, column=3, padx=10, pady=10)
-
+        self.boton_salir_de_ingresar.grid(row=7, column=2, padx=10, pady=10)
+        self.boton_confirmar_datos = tkinter.Button(self.ventana_ingresar, text="Confirmar", command=lambda:self.confirmar_datos())
+        self.boton_confirmar_datos.grid(row=7, column= 1, padx=10, pady=10)
         self.ventana_ingresar.mainloop()
+
+    # Creo una funcion confirmar para reemplazar los valores y vincular el GUI con clase cochera 
+    def confirmar_datos(self):
+        dominio = self.entry_dominio.get().upper() # Guardo el entry en la variable dominio
+        tipo_vehiculo = self.entry_tipo_vehiculo.get().upper() # Guardo el entry en la variable tipo vehiculo
+        ubicacion = self.entry_ubicacion.get()
+
+        vehiculo = Vehiculo(dominio, tipo_vehiculo) # Creo el nuevo objeto con los nuevos valores
+        # Ejecuto la funcion ingresar vehiculo
+        self.cochera.ingresar_vehiculo(vehiculo, ubicacion)
+        print("Se cargaron los datos")
     
     # Creo la funcion de la ventana retirar para cargar los datos de un vehiculo y eliminarlo
     def ventana_retirar_vehiculo(self):
@@ -64,21 +77,32 @@ class CocheraGUI():
         self.entry_dominio_eliminar.grid(row=0, column=1, padx=10, pady=10)
 
         # Creo el boton para eliminar el vehiculo con el dominio ingresado, y para salir de la ventana
-        self.boton_eliminar = tkinter.Button(self.ventana_retirar, text="Eliminar")
+        self.boton_eliminar = tkinter.Button(self.ventana_retirar, text="Eliminar", command=lambda:self.eliminar_datos())
         self.boton_eliminar.grid(row=5, column=1, padx=10, pady=10)
         self.boton_salir_de_retirar = tkinter.Button(self.ventana_retirar, text="Salir", command=self.ventana_retirar.destroy)
         self.boton_salir_de_retirar.grid(row=5, column=3, padx=10, pady=10)
 
         self.ventana_retirar.mainloop()
 
+    # Creo una funcion eliminar para reemplazar los valores y vincular el GUI con clase cochera 
+    def eliminar_datos(self):
+        dominio_buscado = self.entry_dominio_eliminar.get().upper() # Guardo el entry en la variable a buscar
+        self.cochera.retirar_vehiculo(dominio_buscado) # Ejecuto la funcion retirar vehiculo
+
+
     # Creo la funcion de la ventana para mostrar los vehiculos actuales en la cochera
     def ventana_mostrar_vehiculos(self):
         self.ventana_mostrar = tkinter.Toplevel()
         self.ventana_mostrar.geometry("500x250")
-        self.ventana_mostrar.title("Ventana Retirar Vehiculo")
+        self.ventana_mostrar.title("Ventana Mostrar Vehiculos")
 
-        # Muestro los vehiculos actuales
-        tkinter.Label(self.ventana_mostrar, text='Vehiculos actuales').grid(row=0)
+        # Textos
+        self.txt1 = tkinter.Label(self.ventana_mostrar, text='Vehiculos actuales en la cochera:').grid(row=0)
+        self.txt2 = tkinter.Label(self.ventana_mostrar, text="Ubicación-Dominio-Tipo-Hora de Ingreso").grid(row=1)
+
+        texto = self.cochera.mostrar_vehiculos() # Guardo en variable la funcion que muestra mi sql
+        txt = tkinter.Label(self.ventana_mostrar, text=texto)
+        txt.grid(row=3, column=0, padx=10, pady=10)
 
         # Creo un boton para salir de la ventana
         self.boton_salir_de_mostrar = tkinter.Button(self.ventana_mostrar, text="Salir", command=self.ventana_mostrar.destroy)
